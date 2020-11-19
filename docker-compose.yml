@@ -1,0 +1,60 @@
+version: '3.7'
+
+# docker-compose up
+
+services:
+    nginx:
+        image: nginx:latest
+        container_name: nginx
+        restart: always
+        volumes:
+            - ./nginx/core:/etc/nginx/conf.d
+            # - ./nginx/core:/etc/nginx/
+            # - ./nginx/core/nginx.conf:/etc/nginx/conf.d/nginx.conf
+            - ./nginx/www:/var/www/
+            - ./nginx/logs:/var/logs/nginx/
+            - ./nginx/html:/usr/share/html/
+        ports:
+            - "8080:80"
+            - "443:443"
+        working_dir: /var/www/
+        links:
+            - php
+
+    php:
+        # Билдим с помощью dockerfile указав директорию где он лежит
+        build: ./php
+        restart: always
+        #image: php:7-fpm
+        container_name: php-fpm
+        volumes:
+            - ./nginx/www:/var/www
+        ports:
+            - "9000:9000"
+        working_dir: /var/www/
+        # command: composer install
+        links:
+            - mariadb
+
+    mariadb:
+        image: mariadb
+        container_name: mysql_maria
+        restart: always
+        ports: 
+            - "3306:3306"
+        environment:
+            - MYSQL_ALLOW_EMPTY_PASSWORD=1
+            - MYSQL_ROOT_PASSWORD=
+        volumes:
+            - ./mysql:/var/lib/mysql
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        restart: always
+        ports:
+            - "8090:80"
+        environment:
+            - PMA_HOST=mariadb
+        links:
+            - mariadb
